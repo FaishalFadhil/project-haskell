@@ -1,0 +1,3 @@
+name,age,address,temmperature,symptoms,met_positive,vaccinated,status
+jokowi,12,jln mawar,35,none,True,False,negative
+jajang,12,kurawa street,35,none,False,True,negative
