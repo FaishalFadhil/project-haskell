@@ -1,23 +1,33 @@
 import Control.Concurrent
 import Control.Monad (when)
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
+import Control.Monad.Trans.Writer
 import Data.Char (generalCategory, isAlpha, isAlphaNum, isPunctuation, isSymbol)
 import Data.Data (typeOf)
-import Data.List (find, intersperse, isInfixOf)
+import Data.Functor.Identity (Identity (runIdentity))
+import Data.List (elemIndex, find, intersperse, isInfixOf)
 import Data.List.Split
 import GHC.IO.Handle
 import System.Directory
 import System.IO
-import Text.Read (readMaybe)
+import Text.Read (lift, readMaybe)
 
 data PersonData = Empty | PersonData {name :: String, age :: Int, address :: String, temperature :: Int, symptoms :: String, isMeetPositive :: Bool, vaccinated :: Bool, pcrResult :: String} deriving (Show, Eq)
 
 data List t = E | C t (List t)
 
+getUser = do
+  user <- readFile "loginUser.txt"
+  return user
+
 checkIsEmpty :: List a -> Maybe a
 checkIsEmpty E = Nothing
 checkIsEmpty (C x _) = Just x
 
+getPassPhrase :: MaybeT IO String
 getPassPhrase = MaybeT $ do
   putStrLn "Input Your password with minimum 8 characters and 1 special symbol"
   s <- getLine
@@ -44,6 +54,7 @@ isValid s =
         else False
     else False
 
+checkUser :: MaybeT IO String
 checkUser = MaybeT $ do
   putStrLn "Input your User ID with minimum 5 characters"
   value <- getLine
@@ -52,6 +63,7 @@ checkUser = MaybeT $ do
     then return $ Just value
     else return Nothing
 
+askUserIDPass :: String -> IO ()
 askUserIDPass params = do
   maybeInput <- runMaybeT $ do
     user_id <- checkUser
@@ -68,6 +80,7 @@ askUserIDPass params = do
         "register" -> do
           register user_id password
 
+login :: [Char] -> String -> IO ()
 login user_id maybe_value = do
   fileOpen <- openFile "listuserpass.txt" ReadMode
   threadDelay 500000
@@ -77,9 +90,11 @@ login user_id maybe_value = do
   case filtered of
     Just value -> do
       let a = words value
+      let admin = a !! 0
       let old_password = a !! 2
       if maybe_value == old_password
         then do
+          writeFile "loginUser.txt" admin
           putStrLn "Success login\n"
           hClose fileOpen
           dataMenu
@@ -92,6 +107,7 @@ login user_id maybe_value = do
       hClose fileOpen
       mainMenu
 
+register :: [Char] -> [Char] -> IO ()
 register user_id maybe_value = do
   fileOpen <- openFile "listuserpass.txt" AppendMode
   threadDelay 500000
@@ -100,6 +116,7 @@ register user_id maybe_value = do
   putStrLn "Register success, you can login now"
   hClose fileOpen
   mainMenu
+
 checkValue :: IO Bool
 checkValue = do
   answer <- getLine
@@ -133,7 +150,7 @@ createData = do
   putStrLn "Input name max 15 characters"
   name <- checkChar 15
   putStrLn ""
-  fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+  fileOpen <- openFile "covidData.txt" ReadMode
   threadDelay 500000
   text <- hGetContents fileOpen
   let list = lines text
@@ -153,9 +170,8 @@ createData = do
       putStrLn "Input his/her last recorded body temperature"
       temperature <- checkNum
       putStrLn ""
-      putStrLn "Enter the symptoms experienced such as flu, fever, runny nose, shortness of breath max 20 characters"
-      putStrLn "If it doesn't exist, write \"none\""
-      symptoms <- checkChar 20
+      putStrLn "Enter the symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nIf it doesn't exist, write \"none\""
+      symptoms <- checkChar 30
       putStrLn ""
       putStrLn "Have you ever run into someone who is suspected to be positive? (Y/N)"
       isMeetPositive <- checkValue
@@ -166,7 +182,7 @@ createData = do
       putStrLn "PCR/antigen results for the last three days (positive/negative)"
       pcrResult <- getLine
       putStrLn ""
-      fileAppend <- openFile "arkhamAsylumData.txt" AppendMode
+      fileAppend <- openFile "covidData.txt" AppendMode
       threadDelay 500000
       let newData = PersonData {name = name, age = age, address = address, temperature = temperature, symptoms = symptoms, isMeetPositive = isMeetPositive, vaccinated = vaccinated, pcrResult = pcrResult}
       let fileData = name ++ "," ++ show age ++ "," ++ address ++ "," ++ show temperature ++ "," ++ symptoms ++ "," ++ show isMeetPositive ++ "," ++ show vaccinated ++ "," ++ pcrResult
@@ -175,24 +191,26 @@ createData = do
       print newData
       putStrLn ""
       hClose fileAppend
-      dataMenu
+      settingLog "created" $ show newData
 
--- no = 7, name = 15, age = 7, address = 20, temperature = 15, symptoms = 20, isMeetPositive = 16, vaccinated = 12, pcrResult = 11
 printHeadTable :: IO ()
 printHeadTable = do
-  putStrLn "----------------------------------------------------------------------------------------------------------------------------------------------"
-  putStrLn "||     Name       ||  age   ||      address        ||  Temperature   ||      symptoms       || isMeetPositive  || vaccinated  || pcrResult  ||"
-  putStrLn "----------------------------------------------------------------------------------------------------------------------------------------------"
+  putStrLn "--------------------------------------------------------------------------------------------------------------------------------------------------------"
+  putStrLn "||     Name       ||  age   ||      address        ||  Temperature   ||           symptoms            || isMeetPositive  || vaccinated  || pcrResult  ||"
+  putStrLn "--------------------------------------------------------------------------------------------------------------------------------------------------------"
 
 printRowTable :: IO ()
 printRowTable = do
-  fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+  fileOpen <- openFile "covidData.txt" ReadMode
   threadDelay 500000
   text <- hGetContents fileOpen
   let line = tail $ lines text
   mapM_ (selectRowTable) line
   hClose fileOpen
+  printBorderTable
+  settingLog "read" $ "total " ++ show (length line) ++ " data"
 
+selectRowTable :: [Char] -> IO ()
 selectRowTable x = do
   let part = splitOn "," x
   printValue part
@@ -206,7 +224,7 @@ printValue [a, s, d, f, g, h, j, k] = do
   age <- printWord 7 s
   address <- printWord 20 d
   temp <- printWord 15 f
-  symptoms <- printWord 20 g
+  symptoms <- printWord 30 g
   isMeet <- printWord 16 h
   vaccinated <- printWord 12 j
   status <- printWord 11 k
@@ -214,7 +232,7 @@ printValue [a, s, d, f, g, h, j, k] = do
 
 printBorderTable :: IO ()
 printBorderTable = do
-  putStrLn "----------------------------------------------------------------------------------------------------------------------------------------------\n"
+  putStrLn "--------------------------------------------------------------------------------------------------------------------------------------------------------\n"
 
 pickData :: Monad m => [String] -> m PersonData
 pickData [a, s, d, f, g, h, j, k] = return PersonData {name = a, age = (read s :: Int), address = d, temperature = (read f :: Int), symptoms = g, isMeetPositive = (read h :: Bool), vaccinated = (read j :: Bool), pcrResult = k}
@@ -245,7 +263,7 @@ getPcrResult (PersonData {pcrResult = x}) = x
 
 saveData :: PersonData -> [Char] -> IO ()
 saveData newData targetName = do
-  fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+  fileOpen <- openFile "covidData.txt" ReadMode
   text <- hGetContents fileOpen
   let theHead = (head $ lines text) ++ "\n"
   let list = tail $ lines text
@@ -254,17 +272,18 @@ saveData newData targetName = do
   let newList = filtered ++ [newLine]
   let newInput = theHead ++ concat (intersperse "\n" newList)
   when (length newInput > 0) $
-    finalizeUpdate newInput
+    finalizeUpdate newInput newData
 
-finalizeUpdate :: String -> IO ()
-finalizeUpdate newData = do
-  fileOpen <- openFile "arkhamAsylumData.txt" WriteMode
+finalizeUpdate :: Show a => String -> a -> IO ()
+finalizeUpdate newInput newData = do
+  fileOpen <- openFile "covidData.txt" WriteMode
   threadDelay 500000
-  hPutStrLn fileOpen newData
+  hPutStrLn fileOpen newInput
   putStrLn "Success update Data\n"
   hClose fileOpen
-  dataMenu
+  settingLog "updated" $ show newData
 
+menuEdit :: [Char] -> [Char] -> IO ()
 menuEdit value targetName = do
   let part = splitOn "," value
   getData <- pickData part
@@ -275,7 +294,7 @@ menuEdit value targetName = do
     "N" -> do
       putStrLn "Input new name max 15 characters"
       name <- checkChar 15
-      fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+      fileOpen <- openFile "covidData.txt" ReadMode
       text <- hGetContents fileOpen
       let list = lines text
       let filtered = find (\x -> isInfixOf name x) list
@@ -306,9 +325,9 @@ menuEdit value targetName = do
       let newData = getData {temperature = temperature}
       saveData newData targetName
     "SY" -> do
-      putStrLn "Enter the new symptoms experienced such as flu, fever, runny nose, shortness of breath max 20 characters"
+      putStrLn "Enter the new symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nformat answer: \"flu-fever-runny_noe\""
       putStrLn "If it doesn't exist, write \"none\""
-      symptoms <- checkChar 20
+      symptoms <- checkChar 30
       putStrLn "Editing in proccess\n"
       let newData = getData {symptoms = symptoms}
       saveData newData targetName
@@ -339,7 +358,7 @@ editData = do
   putStrLn "Input name will be update max. 15 Chararcters"
   name <- checkChar 15
   putStrLn ""
-  fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+  fileOpen <- openFile "covidData.txt" ReadMode
   text <- hGetContents fileOpen
   let list = lines text
   let filtered = find (\x -> isInfixOf name x) list
@@ -358,12 +377,13 @@ deleteData :: IO ()
 deleteData = do
   putStrLn "Input name will be delete max. 15 Chararcters\nCaution, the same name will be deleted too"
   name <- checkChar 15
-  fileOpen <- openFile "arkhamAsylumData.txt" ReadMode
+  fileOpen <- openFile "covidData.txt" ReadMode
   threadDelay 500000
   text <- hGetContents fileOpen
   let theHead = (head $ lines text) ++ "\n"
   let line = tail $ lines text
   let filtered = filter (\x -> (isInfixOf name x) == False) line
+  let deleted = find (\x -> isInfixOf name x) line
   let newData = theHead ++ concat (intersperse "\n" filtered)
   if (length filtered == length line)
     then do
@@ -373,15 +393,40 @@ deleteData = do
     else do
       hClose fileOpen
       when (length newData > 0) $
-        finalizeData newData
+        finalizeData newData deleted
 
-finalizeData :: String -> IO ()
-finalizeData newData = do
-  fileOpen <- openFile "arkhamAsylumData.txt" WriteMode
+finalizeData :: String -> Maybe [Char] -> IO ()
+finalizeData newData (Just deleted) = do
+  fileOpen <- openFile "covidData.txt" WriteMode
+  let part = splitOn "," deleted
+  deletedData <- pickData part
   threadDelay 500000
   hPutStrLn fileOpen newData
   putStrLn "Success delete Data\n"
   hClose fileOpen
+  settingLog "deleted" $ show deletedData
+
+action :: String -> WriterT String Identity String
+action a = do
+  tell $ "has done " ++ a ++ " on covidData.txt"
+  return a
+
+result :: String -> String -> WriterT String Identity String
+result a b = do
+  tell $ ", result: " ++ a ++ " " ++ b
+  return a
+
+writingLog :: String -> String -> String -> WriterT String Identity String
+writingLog admin act res = do
+  a <- action act
+  b <- result act res
+  return admin
+
+settingLog :: String -> String -> IO ()
+settingLog act res = do
+  admin <- readFile "loginUser.txt"
+  let result = runIdentity . runWriterT $ writingLog admin act res
+  appendFile "saveLog.txt" $ "Log: user ( " ++ (fst result) ++ " ) => " ++ (snd result) ++ "\n"
   dataMenu
 
 dataMenu :: IO ()
@@ -397,8 +442,6 @@ dataMenu = do
       putStrLn ""
       printHeadTable
       printRowTable
-      printBorderTable
-      dataMenu
     "U" -> do
       putStrLn ""
       editData
@@ -407,9 +450,10 @@ dataMenu = do
       putStrLn ""
       deleteData
     "Q" -> do
+      writeFile "loginUser.txt" ""
       putStrLn "Thank you for using this app, see you later"
     _ -> do
-      putStrLn "Please input your code correctly"
+      putStrLn "Please input your code correctly\n"
       dataMenu
 
 mainMenu :: IO ()
@@ -433,5 +477,5 @@ mainMenu = do
 
 main :: IO ()
 main = do
-  putStrLn "Welcome to Covid Data on Arkham Asylum, Gotham City"
+  putStrLn "Welcome to Civil Covid Database 1.0.0."
   mainMenu

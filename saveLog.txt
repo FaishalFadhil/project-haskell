@@ -1,0 +1,13 @@
+Log: user ( admin ) => has done read on covidData.txt, result: read total 2 data
+Log: user ( admin ) => has done created on covidData.txt, result: created PersonData {name = "Josh", age = 40, address = "sesame street", temperature = 40, symptoms = "runny_nose-cough", isMeetPositive = True, vaccinated = False, pcrResult = "positive"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 2 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Josh", age = 40, address = "sesame street", temperature = 39, symptoms = "runny_nose-cough", isMeetPositive = True, vaccinated = False, pcrResult = "positive"}
+Log: user ( admins ) => has done read on covidData.txt, result: read total 3 data
+Log: user ( admin ) => has done created on covidData.txt, result: created PersonData {name = "jo", age = 25, address = "silluvan street", temperature = 35, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "jo", age = 25, address = "silluvan street", temperature = 35, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "positive"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "jo", age = 25, address = "silluvan street", temperature = 35, symptoms = "flu", isMeetPositive = False, vaccinated = True, pcrResult = "positive"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Josh", age = 40, address = "sesame street", temperature = 39, symptoms = "runny_nose-cough", isMeetPositive = True, vaccinated = False, pcrResult = "positive"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data

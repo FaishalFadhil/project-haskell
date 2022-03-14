@@ -1,0 +1,5 @@
+name,age,address,temmperature,symptoms,met_positive,vaccinated,status
+Sherryl,23,rose street,36,none,False,True,negative
+Shania,20,tomato road,38,cough-fever,False,False,positive
+Josh,40,sesame street,39,runny_nose-cough,True,False,positive
+Jo,25,silluvan street,35,flu,False,True,positive
