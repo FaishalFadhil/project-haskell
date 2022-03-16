@@ -11,3 +11,25 @@ Log: user ( admin ) => has done updated on covidData.txt, result: updated Person
 Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
 Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Josh", age = 40, address = "sesame street", temperature = 39, symptoms = "runny_nose-cough", isMeetPositive = True, vaccinated = False, pcrResult = "positive"}
 Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Jo", age = 25, address = "silluvan street", temperature = 37, symptoms = "flu", isMeetPositive = False, vaccinated = True, pcrResult = "positive"}
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Jo", age = 25, address = "silluvan street", temperature = 38, symptoms = "flu", isMeetPositive = False, vaccinated = True, pcrResult = "positive"}
+Log: user ( admin ) => has done deleted on covidData.txt, result: deleted PersonData {name = "Jo", age = 25, address = "silluvan street", temperature = 38, symptoms = "flu", isMeetPositive = False, vaccinated = True, pcrResult = "positive"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 3 data
+Log: user ( fadhil ) => has done created on covidData.txt, result: created PersonData {name = "fadhil", age = 24, address = "Mawar street", temperature = 36, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( fadhil ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( fadhil ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( fadhil ) => has done updated on covidData.txt, result: updated PersonData {name = "fadhil", age = 23, address = "Mawar street", temperature = 36, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( fadhil ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( fadhil ) => has done deleted on covidData.txt, result: deleted PersonData {name = "fadhil", age = 23, address = "Mawar street", temperature = 36, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( fadhil ) => has done read on covidData.txt, result: read total 3 data
+Log: user ( admin ) => has done read on covidData.txt, result: read total 3 data
+Log: user ( admin ) => has done read on covidData.txt, result: read total 3 data
+Log: user ( admin ) => has done created on covidData.txt, result: created PersonData {name = "Juan", age = 25, address = "normal street", temperature = 36, symptoms = "none", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done updated on covidData.txt, result: updated PersonData {name = "Juan", age = 25, address = "normal street", temperature = 36, symptoms = "minor-flu", isMeetPositive = False, vaccinated = True, pcrResult = "negative"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done created on covidData.txt, result: created PersonData {name = "x", age = 1, address = "w", temperature = 1, symptoms = "w", isMeetPositive = False, vaccinated = False, pcrResult = "negative"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 5 data
+Log: user ( admin ) => has done deleted on covidData.txt, result: deleted PersonData {name = "x", age = 1, address = "w", temperature = 1, symptoms = "w", isMeetPositive = False, vaccinated = False, pcrResult = "negative"}
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data
+Log: user ( admin ) => has done read on covidData.txt, result: read total 4 data

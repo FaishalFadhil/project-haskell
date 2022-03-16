@@ -15,10 +15,15 @@ import System.Directory
 import System.IO
 import Text.Read (lift, readMaybe)
 
+-- DATA INIT
+
 data PersonData = Empty | PersonData {name :: String, age :: Int, address :: String, temperature :: Int, symptoms :: String, isMeetPositive :: Bool, vaccinated :: Bool, pcrResult :: String} deriving (Show, Eq)
 
 data List t = E | C t (List t)
 
+--  HELPERS
+
+getUser :: IO String
 getUser = do
   user <- readFile "loginUser.txt"
   return user
@@ -63,6 +68,63 @@ checkUser = MaybeT $ do
     then return $ Just value
     else return Nothing
 
+checkValue :: IO Bool
+checkValue = do
+  answer <- getLine
+  case answer of
+    "Y" -> return True
+    "N" -> return False
+    _ -> do
+      putStrLn "Please enter the appropriate input"
+      checkValue
+
+checkChar :: Int -> IO String
+checkChar num = do
+  answer <- getLine
+  if length answer > num
+    then do
+      putStrLn "Please retype and no longer than 15 characters"
+      checkChar num
+    else return answer
+
+checkNum :: IO Int
+checkNum = do
+  answer <- getLine
+  case (readMaybe answer :: Maybe Int) of
+    Just num -> return num
+    Nothing -> do
+      putStrLn "Input with number"
+      checkNum
+
+pickData :: Monad m => [String] -> m PersonData
+pickData [a, s, d, f, g, h, j, k] = return PersonData {name = a, age = (read s :: Int), address = d, temperature = (read f :: Int), symptoms = g, isMeetPositive = (read h :: Bool), vaccinated = (read j :: Bool), pcrResult = k}
+
+getName :: PersonData -> String
+getName (PersonData {name = x}) = x
+
+getAge :: PersonData -> Int
+getAge (PersonData {age = x}) = x
+
+getAddress :: PersonData -> String
+getAddress (PersonData {address = x}) = x
+
+getTemperature :: PersonData -> Int
+getTemperature (PersonData {temperature = x}) = x
+
+getSymptoms :: PersonData -> String
+getSymptoms (PersonData {symptoms = x}) = x
+
+getIsMeetPositive :: PersonData -> Bool
+getIsMeetPositive (PersonData {isMeetPositive = x}) = x
+
+getVaccinated :: PersonData -> Bool
+getVaccinated (PersonData {vaccinated = x}) = x
+
+getPcrResult :: PersonData -> String
+getPcrResult (PersonData {pcrResult = x}) = x
+
+-- AUTHENTICATION FUNCTIONS
+
 askUserIDPass :: String -> IO ()
 askUserIDPass params = do
   maybeInput <- runMaybeT $ do
@@ -71,7 +133,7 @@ askUserIDPass params = do
     return (user_id, password)
   case maybeInput of
     Nothing -> do
-      putStrLn "User ID or password false, please try again or register\n"
+      putStrLn "User ID or password false, please try again\n"
       askUserIDPass params
     Just (user_id, password) -> do
       case params of
@@ -86,7 +148,7 @@ login user_id maybe_value = do
   threadDelay 500000
   text <- hGetContents fileOpen
   let list = lines text
-  let filtered = find (\x -> isInfixOf user_id x) list
+  let filtered = find (\x -> isInfixOf (user_id ++ " :") x) list
   case filtered of
     Just value -> do
       let a = words value
@@ -117,33 +179,7 @@ register user_id maybe_value = do
   hClose fileOpen
   mainMenu
 
-checkValue :: IO Bool
-checkValue = do
-  answer <- getLine
-  case answer of
-    "Y" -> return True
-    "N" -> return False
-    _ -> do
-      putStrLn "Please enter the appropriate input"
-      checkValue
-
-checkChar :: Int -> IO String
-checkChar num = do
-  answer <- getLine
-  if length answer > num
-    then do
-      putStrLn "Please retype and no longer than 15 characters"
-      checkChar num
-    else return answer
-
-checkNum :: IO Int
-checkNum = do
-  answer <- getLine
-  case (readMaybe answer :: Maybe Int) of
-    Just num -> return num
-    Nothing -> do
-      putStrLn "Input with number"
-      checkNum
+-- CREATE DATA FUNCTION
 
 createData :: IO ()
 createData = do
@@ -170,7 +206,7 @@ createData = do
       putStrLn "Input his/her last recorded body temperature"
       temperature <- checkNum
       putStrLn ""
-      putStrLn "Enter the symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nIf it doesn't exist, write \"none\""
+      putStrLn "Enter the symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nformat answer: \"flu-fever-runny_noe\" - If it doesn't exist, write \"none\""
       symptoms <- checkChar 30
       putStrLn ""
       putStrLn "Have you ever run into someone who is suspected to be positive? (Y/N)"
@@ -192,6 +228,8 @@ createData = do
       putStrLn ""
       hClose fileAppend
       settingLog "created" $ show newData
+
+-- PRINT/READ DATA FUNCTIONS
 
 printHeadTable :: IO ()
 printHeadTable = do
@@ -234,54 +272,27 @@ printBorderTable :: IO ()
 printBorderTable = do
   putStrLn "--------------------------------------------------------------------------------------------------------------------------------------------------------\n"
 
-pickData :: Monad m => [String] -> m PersonData
-pickData [a, s, d, f, g, h, j, k] = return PersonData {name = a, age = (read s :: Int), address = d, temperature = (read f :: Int), symptoms = g, isMeetPositive = (read h :: Bool), vaccinated = (read j :: Bool), pcrResult = k}
+-- EDIT DATA FUNCTIONS
 
-getName :: PersonData -> String
-getName (PersonData {name = x}) = x
-
-getAge :: PersonData -> Int
-getAge (PersonData {age = x}) = x
-
-getAddress :: PersonData -> String
-getAddress (PersonData {address = x}) = x
-
-getTemperature :: PersonData -> Int
-getTemperature (PersonData {temperature = x}) = x
-
-getSymptoms :: PersonData -> String
-getSymptoms (PersonData {symptoms = x}) = x
-
-getIsMeetPositive :: PersonData -> Bool
-getIsMeetPositive (PersonData {isMeetPositive = x}) = x
-
-getVaccinated :: PersonData -> Bool
-getVaccinated (PersonData {vaccinated = x}) = x
-
-getPcrResult :: PersonData -> String
-getPcrResult (PersonData {pcrResult = x}) = x
-
-saveData :: PersonData -> [Char] -> IO ()
-saveData newData targetName = do
+editData :: IO ()
+editData = do
+  putStrLn "Input name will be update max. 15 Chararcters"
+  name <- checkChar 15
+  putStrLn ""
   fileOpen <- openFile "covidData.txt" ReadMode
   text <- hGetContents fileOpen
-  let theHead = (head $ lines text) ++ "\n"
-  let list = tail $ lines text
-  let filtered = filter (\x -> (isInfixOf targetName x) == False) list
-  let newLine = ((getName newData) ++ "," ++ show (getAge newData) ++ "," ++ (getAddress newData) ++ "," ++ show (getTemperature newData) ++ "," ++ (getSymptoms newData) ++ "," ++ show (getIsMeetPositive newData) ++ "," ++ show (getVaccinated newData) ++ "," ++ (getPcrResult newData))
-  let newList = filtered ++ [newLine]
-  let newInput = theHead ++ concat (intersperse "\n" newList)
-  when (length newInput > 0) $
-    finalizeUpdate newInput newData
-
-finalizeUpdate :: Show a => String -> a -> IO ()
-finalizeUpdate newInput newData = do
-  fileOpen <- openFile "covidData.txt" WriteMode
-  threadDelay 500000
-  hPutStrLn fileOpen newInput
-  putStrLn "Success update Data\n"
-  hClose fileOpen
-  settingLog "updated" $ show newData
+  let list = lines text
+  let filtered = find (\x -> isInfixOf (name ++ ",") x) list
+  case filtered of
+    Just value -> do
+      threadDelay 500000
+      hClose fileOpen
+      menuEdit value name
+    Nothing -> do
+      putStrLn "There's no data, check again\n"
+      threadDelay 500000
+      hClose fileOpen
+      dataMenu
 
 menuEdit :: [Char] -> [Char] -> IO ()
 menuEdit value targetName = do
@@ -297,7 +308,7 @@ menuEdit value targetName = do
       fileOpen <- openFile "covidData.txt" ReadMode
       text <- hGetContents fileOpen
       let list = lines text
-      let filtered = find (\x -> isInfixOf name x) list
+      let filtered = find (\x -> isInfixOf (name ++ ",") x) list
       case filtered of
         Just newValue -> do
           putStrLn $ "the name " ++ name ++ " is taken, please try again\n"
@@ -325,8 +336,7 @@ menuEdit value targetName = do
       let newData = getData {temperature = temperature}
       saveData newData targetName
     "SY" -> do
-      putStrLn "Enter the new symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nformat answer: \"flu-fever-runny_noe\""
-      putStrLn "If it doesn't exist, write \"none\""
+      putStrLn "Enter the new symptoms experienced such as flu, fever, runny nose, shortness of breath max 30 characters\nformat answer: \"flu-fever-runny_noe\" - If it doesn't exist, write \"none\""
       symptoms <- checkChar 30
       putStrLn "Editing in proccess\n"
       let newData = getData {symptoms = symptoms}
@@ -353,25 +363,29 @@ menuEdit value targetName = do
       putStrLn "Please select the right menu\n"
       menuEdit value targetName
 
-editData :: IO ()
-editData = do
-  putStrLn "Input name will be update max. 15 Chararcters"
-  name <- checkChar 15
-  putStrLn ""
+saveData :: PersonData -> [Char] -> IO ()
+saveData newData targetName = do
   fileOpen <- openFile "covidData.txt" ReadMode
   text <- hGetContents fileOpen
-  let list = lines text
-  let filtered = find (\x -> isInfixOf name x) list
-  case filtered of
-    Just value -> do
-      threadDelay 500000
-      hClose fileOpen
-      menuEdit value name
-    Nothing -> do
-      putStrLn "There's no data, check again\n"
-      threadDelay 500000
-      hClose fileOpen
-      dataMenu
+  let theHead = (head $ lines text) ++ "\n"
+  let list = tail $ lines text
+  let filtered = filter (\x -> (isInfixOf (targetName ++ ",") x) == False) list
+  let newLine = ((getName newData) ++ "," ++ show (getAge newData) ++ "," ++ (getAddress newData) ++ "," ++ show (getTemperature newData) ++ "," ++ (getSymptoms newData) ++ "," ++ show (getIsMeetPositive newData) ++ "," ++ show (getVaccinated newData) ++ "," ++ (getPcrResult newData))
+  let newList = filtered ++ [newLine]
+  let newInput = theHead ++ concat (intersperse "\n" newList)
+  when (length newInput > 0) $
+    finalizeUpdate newInput newData
+
+finalizeUpdate :: Show a => String -> a -> IO ()
+finalizeUpdate newInput newData = do
+  fileOpen <- openFile "covidData.txt" WriteMode
+  threadDelay 500000
+  hPutStrLn fileOpen newInput
+  putStrLn "Success update Data\n"
+  hClose fileOpen
+  settingLog "updated" $ show newData
+
+-- DELETE DATA FUNCTIONS
 
 deleteData :: IO ()
 deleteData = do
@@ -382,8 +396,8 @@ deleteData = do
   text <- hGetContents fileOpen
   let theHead = (head $ lines text) ++ "\n"
   let line = tail $ lines text
-  let filtered = filter (\x -> (isInfixOf name x) == False) line
-  let deleted = find (\x -> isInfixOf name x) line
+  let filtered = filter (\x -> (isInfixOf (name ++ ",") x) == False) line
+  let deleted = find (\x -> isInfixOf (name ++ ",") x) line
   let newData = theHead ++ concat (intersperse "\n" filtered)
   if (length filtered == length line)
     then do
@@ -405,6 +419,8 @@ finalizeData newData (Just deleted) = do
   putStrLn "Success delete Data\n"
   hClose fileOpen
   settingLog "deleted" $ show deletedData
+
+-- LOGGING FUNCTIONS
 
 action :: String -> WriterT String Identity String
 action a = do
@@ -429,6 +445,8 @@ settingLog act res = do
   appendFile "saveLog.txt" $ "Log: user ( " ++ (fst result) ++ " ) => " ++ (snd result) ++ "\n"
   dataMenu
 
+-- MENUS
+
 dataMenu :: IO ()
 dataMenu = do
   putStrLn "Please select menu below"
@@ -451,7 +469,8 @@ dataMenu = do
       deleteData
     "Q" -> do
       writeFile "loginUser.txt" ""
-      putStrLn "Thank you for using this app, see you later"
+      putStrLn "\nSuccessfully Logout, opening main menu\n"
+      mainMenu
     _ -> do
       putStrLn "Please input your code correctly\n"
       dataMenu
@@ -470,6 +489,7 @@ mainMenu = do
     "Q" -> do
       putStrLn ""
       putStrLn "Thank you for using this app, see you later"
+      return ()
     _ -> do
       putStrLn "Please input your code correctly"
       putStrLn ""
